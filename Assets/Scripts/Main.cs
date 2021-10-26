@@ -83,6 +83,32 @@ public class Main : MonoBehaviour
         //  3. 패킷 가져오기
         var packet = Encoding.UTF8.GetString(socketDesc.GetPacket());
         Debug.Log(packet);
+        var ss = packet.Split();
+        if(ss[0] == "join")
+        {
+            if(!spawns.ContainsKey(ss[1]))
+            {
+                var go = new GameObject();
+                var spawn = go.AddComponent<Spawn>();
+                spawns[ss[1]] = spawn;
+            }
+        }
+        else if(ss[0] == "avatar")
+        {
+            if(spawns.ContainsKey(ss[1]))
+            {
+                var spawn = spawns[ss[1]];
+                if(spawn != mySpawn) spawn.CreateAvatar(ss[1], int.Parse(ss[2]));
+            }
+        }
+        else if(ss[0] == "look")
+        {
+            if(spawns.ContainsKey(ss[1]))
+            {
+                var spawn = spawns[ss[1]];
+                spawn.ChangeLook(int.Parse(ss[2]), int.Parse(ss[3]), int.Parse(ss[4]), int.Parse(ss[5]));
+            }
+        }
 	}
 	//  접속 버튼이 눌렸을 때의 작업
 	public void OnButtonConnect()
