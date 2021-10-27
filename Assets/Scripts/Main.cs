@@ -13,6 +13,7 @@ public class Main : MonoBehaviour
 
     Dictionary<string, Spawn> spawns;
     Spawn mySpawn;          //  본인의 스폰
+    Dictionary<string, WorldItem> worldItems;
 
     void Start()
     {
@@ -21,6 +22,8 @@ public class Main : MonoBehaviour
 
         //  spawn들을 관리할 spawns를 생성합니다.
         spawns = new Dictionary<string, Spawn>();
+        //  world item들을 관리할 worldItems를 생성합니다.
+        worldItems = new Dictionary<string, WorldItem>();
     }
     void Update()
     {
@@ -43,6 +46,32 @@ public class Main : MonoBehaviour
         zoom += Input.mouseScrollDelta.y*0.1f;
         if(zoom<-1.0f) zoom = -1.0f; else if(zoom > 1.0f) zoom = 1.0f;
         var t = Time.deltaTime;
+
+        //  마우스 버튼 0이 눌리면 마우스의 위치를 표시
+        if(Input.GetMouseButtonDown(0))
+        {
+            //  1. 카메라 위치로부터 해당 마우스 위치로 가는 ray 생성
+            var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            //  2. 해당 ray를 이용하여 충돌검사
+            RaycastHit hit;
+            if(Physics.Raycast(ray, out hit))
+            {
+                Transform ht = hit.transform;
+                WorldItem wi = null;
+                while( ht != null )
+                {
+                    if(ht.gameObject.TryGetComponent<WorldItem>(out wi)) break;
+                    ht = ht.parent;
+                }
+                if(wi != null)
+                {
+                    Debug.LogFormat("Hit : {0}", wi.name);
+                    var mesg = string.Format("action {0} {1} {2}", 
+                        mySpawn.name, wi.name, hit.transform.name);
+                    socketDesc.Send(Encoding.UTF8.GetBytes(mesg));
+                }
+            }
+        }
         
         //  마우스 버튼 1이 클릭된 상태에서 팬 처리
         if(Input.GetMouseButtonDown(1)) lastMousePos = Input.mousePosition;
@@ -52,7 +81,7 @@ public class Main : MonoBehaviour
             camoffset += Input.mousePosition.x - lastMousePos.x;
             lastMousePos = Input.mousePosition;
         }
-        else
+        else if(mySpawn.speed != 0.0f)
         {
             if(camoffset < 0.0f)
             {
@@ -107,6 +136,27 @@ public class Main : MonoBehaviour
             {
                 var spawn = spawns[ss[1]];
                 spawn.ChangeLook(int.Parse(ss[2]), int.Parse(ss[3]), int.Parse(ss[4]), int.Parse(ss[5]));
+            }
+        }
+        else if(ss[0] == "worlddata")
+        {
+            //  1. 새로운 게임오브젝트 생성
+            var go = new GameObject();
+            //  2. 이 오브젝트를 WorldItem 컴포넌트를 등록
+            var wi = go.AddComponent<WorldItem>();
+            //  3. 실제 오브젝트를 생성
+            wi.CreateItem(ss[1], float.Parse(ss[2]), float.Parse(ss[3]), float.Parse(ss[4]));
+            //  4. worldItems라는 자료구조에 해당 월드 아이템을 등록
+            worldItems[ss[1]] = wi;
+        }
+        else if(ss[0] == "update")
+        {
+            //  1. 이름을 가지고 worlditems 항목을 찾아봅니다.
+            if(worldItems.ContainsKey(ss[1]))
+            {
+                //  2. 찾은 항목에서 UpdateItem 함수를 호출합니다.
+                var wi = worldItems[ss[1]];
+                wi.UpdateItem(ss[1], ss[2]);
             }
         }
 	}
