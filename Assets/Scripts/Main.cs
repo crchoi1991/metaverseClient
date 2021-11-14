@@ -47,8 +47,8 @@ public class Main : MonoBehaviour
         if(zoom<-1.0f) zoom = -1.0f; else if(zoom > 1.0f) zoom = 1.0f;
         var t = Time.deltaTime;
 
-        //  마우스 버튼 0이 눌리면 마우스의 위치를 표시
-        if(Input.GetMouseButtonDown(0))
+        //  마우스 버튼 0 또는 마우스 버튼 1이 눌리면 마우스의 위치를 표시
+        if(Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
         {
             //  1. 카메라 위치로부터 해당 마우스 위치로 가는 ray 생성
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -66,9 +66,19 @@ public class Main : MonoBehaviour
                 if(wi != null)
                 {
                     Debug.LogFormat("Hit : {0}", wi.name);
-                    var mesg = string.Format("action {0} {1} {2}", 
-                        mySpawn.name, wi.name, hit.transform.name);
-                    socketDesc.Send(Encoding.UTF8.GetBytes(mesg));
+                    //  마우스 버튼 0이 눌렸으면 place 수행, 1이 눌렸으면 해당 아이템에 join
+                    if(Input.GetMouseButtonDown(0))
+                    {
+                        var mesg = string.Format("action {0} {1} place {2}", 
+                            mySpawn.name, wi.name, hit.transform.name);
+                        socketDesc.Send(Encoding.UTF8.GetBytes(mesg));
+                    }
+                    else
+                    {
+                        var mesg = string.Format("action {0} {1} join", 
+                            mySpawn.name, wi.name, hit.transform.name);
+                        socketDesc.Send(Encoding.UTF8.GetBytes(mesg));
+                    }
                 }
             }
         }
@@ -157,6 +167,22 @@ public class Main : MonoBehaviour
                 //  2. 찾은 항목에서 UpdateItem 함수를 호출합니다.
                 var wi = worldItems[ss[1]];
                 wi.UpdateItem(ss[1], ss[2]);
+            }
+        }
+        else if(ss[0] == "move")
+        {
+	if(spawns.ContainsKey(ss[1]))
+            {
+                 var spawn = spawns[ss[1]];
+                 // myspawn이 아닌 경우에만 설정
+                 if(spawn != mySpawn)
+                 {
+		spawn.transform.localPosition = new Vector3(float.Parse(ss[2]), 0.0f, float.Parse(ss[3]));
+                 spawn.direction = float.Parse(ss[4]);
+                 spawn.speed = float.Parse(ss[5]);
+                 spawn.aspeed = float.Parse(ss[6]);
+                 Debug.LogFormat("spawn : {0}, speed = {1}, aspeed = {2}", ss[2], spawn.speed, spawn.aspeed);
+                 }
             }
         }
 	}
