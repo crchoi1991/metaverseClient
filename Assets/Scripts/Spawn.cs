@@ -9,6 +9,7 @@ public class Spawn : MonoBehaviour
 	public float aspeed;    //  회전속도
 	public float direction; //  z축을 기준으로 해서 시계방향으로 얼만큼 회전해서 바라보는 방향
 	GameObject nameGo;      //  이름판용 게임오브젝트
+	public string joinItem;	//	현재 참여한 월드 아이템
 
 	void Start()
 	{
@@ -23,7 +24,7 @@ public class Spawn : MonoBehaviour
 
 		//  3. 애니메이션 적용
 		if(speed > 0.0f) avatar.Walk();
-		else avatar.Stand();
+		else if(avatar.GetAnimation() == 1) avatar.Stand();
 
 		//  4. 회전 이동
 		direction += t*aspeed;

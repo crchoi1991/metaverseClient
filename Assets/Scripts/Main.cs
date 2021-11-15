@@ -14,6 +14,9 @@ public class Main : MonoBehaviour
 	Dictionary<string, Spawn> spawns;
 	Spawn mySpawn;          //  본인의 스폰
 	Dictionary<string, WorldItem> worldItems;
+	GameObject messageBox;
+	GameObject toastMessage;
+	float toastMessageRemain;
 
 	void Start()
 	{
@@ -24,6 +27,18 @@ public class Main : MonoBehaviour
 		spawns = new Dictionary<string, Spawn>();
 		//  world item들을 관리할 worldItems를 생성합니다.
 		worldItems = new Dictionary<string, WorldItem>();
+
+		//	MessageBox를 찾습니다.
+		messageBox = GameObject.Find("MessageBox").gameObject;
+		//	MessageBox를 안 보이도록 hiding합니다.
+		messageBox.SetActive(false);
+
+		//	ToastMessage를 찾습니다.
+		toastMessage = GameObject.Find("ToastMessage").gameObject;
+		//	ToastMessage를 안 보이도록 hiding합니다.
+		toastMessage.SetActive(false);
+		//	ToastMessage 남은 시간을 -1.0으로 초기화합니다.
+		toastMessageRemain = -1.0f;
 	}
 	void Update()
 	{
@@ -73,11 +88,19 @@ public class Main : MonoBehaviour
 							mySpawn.name, wi.name, hit.transform.name);
 						socketDesc.Send(Encoding.UTF8.GetBytes(mesg));
 					}
+					else if(mySpawn.joinItem == wi.name)
+					{
+						var mesg = string.Format("{0}에서 떠나시겠습니까?", wi.name);
+						var yesMesg = string.Format("action {0} {1} leave", 
+							mySpawn.name, wi.name);
+						ShowMessageBox(mesg, yesMesg);
+					}
 					else
 					{
-						var mesg = string.Format("action {0} {1} join", 
-							mySpawn.name, wi.name, hit.transform.name);
-						socketDesc.Send(Encoding.UTF8.GetBytes(mesg));
+						var mesg = string.Format("{0}에 참여하시겠습니까?", wi.name);
+						var yesMesg = string.Format("action {0} {1} join", 
+							mySpawn.name, wi.name);
+						ShowMessageBox(mesg, yesMesg);
 					}
 				}
 			}
@@ -112,6 +135,16 @@ public class Main : MonoBehaviour
 			cdirv*camd*Mathf.Cos(30*Mathf.PI/180.0f) + 
 			(new Vector3(0, camd*Mathf.Sin(30*Mathf.PI/180.0f)+1.8f, 0));
 		Camera.main.transform.localEulerAngles = new Vector3(30.0f, (mySpawn.direction+camoffset), 0);
+
+		//	toastMessage 시간 검사
+		if(toastMessageRemain > 0.0f)
+		{
+			//	1. 현재 프레임 타임만큼 시간만큼 남은 시간을 없앤다.
+			toastMessageRemain -= Time.deltaTime;
+
+			//	2. 남은시간이 0이하이면, 시간이 모두 흐른 것이므로 toastMessage를 사라지게 한다.
+			if(toastMessageRemain <= 0.0f) toastMessage.SetActive(false);
+		}
 	}
 	void FixedUpdate()
 	{
@@ -130,6 +163,10 @@ public class Main : MonoBehaviour
 				var go = new GameObject();
 				var spawn = go.AddComponent<Spawn>();
 				spawns[ss[1]] = spawn;
+
+				//	새로운 플레이어가 접속했다고 메세지를 토스트에 뿌립니다.
+				var mesg = string.Format("친구 {0}이 접속했습니다.\n안녕하세요.", ss[1]);
+				ShowToastMessage(mesg);
 			}
 		}
 		else if(ss[0] == "leave")
@@ -181,10 +218,32 @@ public class Main : MonoBehaviour
 		else if(ss[0] == "action")
 		{
 			//  1. 이름을 가지고 worlditems 항목을 찾아봅니다.
-			if(worldItems.ContainsKey(ss[1]))
+			if(worldItems.ContainsKey(ss[2]))
 			{
+				Debug.LogFormat("action : {0}, {1}", ss[1], ss[3]);
 				//  2. 찾은 항목에서 UpdateItem 함수를 호출합니다.
-				var wi = worldItems[ss[1]];
+				var wi = worldItems[ss[2]];
+				//	3. 만약 world item에 join하는 명령어인 경우 해당 캐릭터를 앉도록 한다.
+				if(ss[3] == "join")
+				{
+					var spawn = spawns[ss[1]];
+					spawn.GetAvatar().Sit();
+					//	현재 스폰이 ss[2]에 참여했음을 표시
+					spawn.joinItem = ss[2];
+					//	토스트 메세지 표시
+					var mesg = string.Format("{0}가 {1}에 참여했습니다.", ss[1], ss[2]);
+					ShowToastMessage(mesg);
+				}
+				else if(ss[3] == "leave")
+				{
+					var spawn = spawns[ss[1]];
+					spawn.GetAvatar().Stand();
+					//	현재 스폰이 ss[2]에서 떠났음을 표시
+					spawn.joinItem = null;
+					//	토스트 메세지 표시
+					var mesg = string.Format("{0}가 {1}에 떠났습니다.", ss[1], ss[2]);
+					ShowToastMessage(mesg);
+				}
 				wi.ActionItem(ss[1], ss[2], ss[3]);
 			}
 		}
@@ -245,6 +304,55 @@ public class Main : MonoBehaviour
 		{
 			Debug.LogError("Connection is failed");
 		}
+	}
+
+	string yesSendMesg;			//	yes 버튼이 눌릴 경우 전달할 메세지
+	//	Message Box를 보이도록 합니다.
+	public void ShowMessageBox(string mesg, string yes)
+	{
+		//	1. MessageBox를 보이도록 합니다.
+		messageBox.SetActive(true);
+
+		//	2. Message 오브젝트를 찾습니다.
+		var messageObj = messageBox.transform.Find("Message").GetComponent<Text>();
+
+		//	3. Message 오브젝트에 mesg값을 적습니다.
+		messageObj.text = mesg;
+
+		//	4. yes 버튼이 눌릴 경우 전달할 메세지를 저장합니다.
+		yesSendMesg = yes;
+	}
+
+	//	ToastMessage를 보이도록 합니다.
+	public void ShowToastMessage(string mesg, float duration = 5.0f)
+	{
+		//	1. ToastMessage를 보이도록 합니다.
+		toastMessage.SetActive(true);
+
+		//	2. Message 오브젝트를 찾습니다.
+		var messageObj = toastMessage.transform.Find("Message").GetComponent<Text>();
+
+		//	3. Message 오브젝트에 mesg값을 적습니다.
+		messageObj.text = mesg;
+
+		//	4. 보이는 시간을 기록합니다.
+		toastMessageRemain = duration;
+	}
+
+	//	Yes 버튼이 눌린 경우
+	public void OnButtonYes()
+	{
+		//	1. MessageBox를 숨기도록 합니다.
+		messageBox.SetActive(false);
+
+		//	2. action userName Reversi join
+		socketDesc.Send(Encoding.UTF8.GetBytes(yesSendMesg));
+	}
+	//	No 버튼이 눌린 경우
+	public void OnButtonNo()
+	{
+		//	1. MessageBox를 숨기도록 합니다.
+		messageBox.SetActive(false);
 	}
 	void SendMove()
 	{

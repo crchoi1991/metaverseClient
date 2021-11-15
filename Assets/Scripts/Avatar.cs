@@ -54,6 +54,7 @@ public class Avatar : MonoBehaviour
 		animator = go.GetComponent<Animator>();
 		animator.runtimeAnimatorController = anims[model];
 	}
+	public int GetAnimation() { return animator.GetInteger("animation"); }
 	public void Walk() { animator.SetInteger("animation", 1); }
 	public void Sit() { animator.SetInteger("animation", 3); }
 	public void Stand() { animator.SetInteger("animation", 0); }
