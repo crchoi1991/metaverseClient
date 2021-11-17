@@ -5,9 +5,21 @@ using System.Collections.Generic;
 
 public class Main : MonoBehaviour
 {
+	enum CameraMode {
+		FirstView,			//	1인칭 시점
+		TrackView,			//	3인칭 시점
+		CameraModeMax
+	};
+	//	Current camera mode
+	CameraMode camMode = CameraMode.TrackView;
+	//	First view mode camera parameters
+	float xAngle=0;			//	카메라가 보고있는 각도
+	float yAngle=0;			//	카메라가 보고있는 각도
+	//	Track view mode camera paramters
 	float distance = 5.0f;  //  camera distance
 	float zoom;             //  camera zoom
 	float camoffset;        //  camera offset angle
+
 	Vector2 lastMousePos;   //  last mouse position
 	SocketDesc socketDesc;  //  소켓 디스크립터
 
@@ -106,35 +118,8 @@ public class Main : MonoBehaviour
 			}
 		}
 		
-		//  마우스 버튼 1이 클릭된 상태에서 팬 처리
-		if(Input.GetMouseButtonDown(1)) lastMousePos = Input.mousePosition;
-		else if(Input.GetMouseButtonUp(1)) lastMousePos = Vector2.zero;
-		if(lastMousePos != Vector2.zero)
-		{
-			camoffset += Input.mousePosition.x - lastMousePos.x;
-			lastMousePos = Input.mousePosition;
-		}
-		else if(mySpawn.speed != 0.0f)
-		{
-			if(camoffset < 0.0f)
-			{
-				camoffset += 0.1f;
-				if(camoffset > 0.0f) camoffset = 0.0f;
-			}
-			else if(camoffset > 0.0f)
-			{
-				camoffset -= 0.1f;
-				if(camoffset < 0.0f) camoffset = 0.0f;
-			}
-		}
-		//  카메라 위치
-		var camd = distance*Mathf.Pow(2.0f, zoom);
-		var rad = Mathf.Deg2Rad * (mySpawn.direction+camoffset);
-		var cdirv = new Vector3(Mathf.Sin(rad), 0, Mathf.Cos(rad));
-		Camera.main.transform.localPosition = mySpawn.transform.localPosition - 
-			cdirv*camd*Mathf.Cos(30*Mathf.PI/180.0f) + 
-			(new Vector3(0, camd*Mathf.Sin(30*Mathf.PI/180.0f)+1.8f, 0));
-		Camera.main.transform.localEulerAngles = new Vector3(30.0f, (mySpawn.direction+camoffset), 0);
+		if(camMode == CameraMode.FirstView) UpdateFirstView();
+		else UpdateTrackView();
 
 		//	toastMessage 시간 검사
 		if(toastMessageRemain > 0.0f)
@@ -244,6 +229,11 @@ public class Main : MonoBehaviour
 					var mesg = string.Format("{0}가 {1}에 떠났습니다.", ss[1], ss[2]);
 					ShowToastMessage(mesg);
 				}
+				else if(ss[4] == "quit")
+				{
+					var mesg = string.Format("경기 종료. 백 : {0}, 흑 : {1}", ss[4], ss[5]);
+					ShowToastMessage(mesg);
+				}
 				wi.ActionItem(ss[1], ss[2], ss[3]);
 			}
 		}
@@ -263,6 +253,73 @@ public class Main : MonoBehaviour
 				 }
 			}
 		}
+	}
+	void UpdateFirstView()
+	{
+		//	만약 c키가 눌리면 카메라 모드를 트랙 뷰로 바꿉니다.
+		if(Input.GetKeyUp(KeyCode.C))
+		{
+			camMode = CameraMode.TrackView;
+			return;
+		}
+		//	마우스 버튼 1이 클릭된 상태에서 팬 처리
+		if(Input.GetMouseButtonDown(1)) lastMousePos = Input.mousePosition;
+		else if(Input.GetMouseButtonUp(1)) lastMousePos = Vector2.zero;
+		//	lastMousePos값이 0벡터가 아닌 경우에는 팬 처리
+		if(lastMousePos != Vector2.zero)
+		{
+			xAngle -= Input.mousePosition.y - lastMousePos.y;
+			yAngle += Input.mousePosition.x - lastMousePos.x;
+			if(xAngle < -45.0f) xAngle = -45.0f;
+			else if(xAngle > 45.0f) xAngle = 45.0f;
+			if(yAngle < -90.0f) yAngle = -90.0f;
+			else if(yAngle > 90.0f) yAngle = 90.0f;
+			lastMousePos = Input.mousePosition;
+		}
+		//	카메라 위치 설정
+		Camera.main.transform.localPosition = mySpawn.transform.localPosition +
+			new Vector3(0.0f, 1.7f, 0.0f);
+		var dir = mySpawn.transform.localEulerAngles;
+		Camera.main.transform.localEulerAngles = new Vector3(
+			dir.x + xAngle, dir.y + yAngle, dir.z);
+	}
+	void UpdateTrackView()
+	{
+		//	만약 c키가 눌리면 카메라 모드를 일인칭 뷰로 바꿉니다.
+		if(Input.GetKeyUp(KeyCode.C))
+		{
+			camMode = CameraMode.FirstView;
+			return;
+		}
+		//  마우스 버튼 1이 클릭된 상태에서 팬 처리
+		if(Input.GetMouseButtonDown(1)) lastMousePos = Input.mousePosition;
+		else if(Input.GetMouseButtonUp(1)) lastMousePos = Vector2.zero;
+		if(lastMousePos != Vector2.zero)
+		{
+			camoffset += Input.mousePosition.x - lastMousePos.x;
+			lastMousePos = Input.mousePosition;
+		}
+		else if(mySpawn.speed != 0.0f)
+		{
+			if(camoffset < 0.0f)
+			{
+				camoffset += 0.1f;
+				if(camoffset > 0.0f) camoffset = 0.0f;
+			}
+			else if(camoffset > 0.0f)
+			{
+				camoffset -= 0.1f;
+				if(camoffset < 0.0f) camoffset = 0.0f;
+			}
+		}
+		//  카메라 위치
+		var camd = distance*Mathf.Pow(2.0f, zoom);
+		var rad = Mathf.Deg2Rad * (mySpawn.direction+camoffset);
+		var cdirv = new Vector3(Mathf.Sin(rad), 0, Mathf.Cos(rad));
+		Camera.main.transform.localPosition = mySpawn.transform.localPosition - 
+			cdirv*camd*Mathf.Cos(30*Mathf.PI/180.0f) + 
+			(new Vector3(0, camd*Mathf.Sin(30*Mathf.PI/180.0f)+1.8f, 0));
+		Camera.main.transform.localEulerAngles = new Vector3(30.0f, (mySpawn.direction+camoffset), 0);
 	}
 	//  접속 버튼이 눌렸을 때의 작업
 	public void OnButtonConnect()
@@ -346,7 +403,7 @@ public class Main : MonoBehaviour
 		messageBox.SetActive(false);
 
 		//	2. action userName Reversi join
-		socketDesc.Send(Encoding.UTF8.GetBytes(yesSendMesg));
+		if(yesSendMesg != null) socketDesc.Send(Encoding.UTF8.GetBytes(yesSendMesg));
 	}
 	//	No 버튼이 눌린 경우
 	public void OnButtonNo()
