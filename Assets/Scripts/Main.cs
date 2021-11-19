@@ -209,7 +209,7 @@ public class Main : MonoBehaviour
 				//  2. 찾은 항목에서 UpdateItem 함수를 호출합니다.
 				var wi = worldItems[ss[2]];
 				//	3. 만약 world item에 join하는 명령어인 경우 해당 캐릭터를 앉도록 한다.
-				if(ss[3] == "join")
+				if(ss[4] == "join")
 				{
 					var spawn = spawns[ss[1]];
 					spawn.GetAvatar().Sit();
@@ -219,7 +219,7 @@ public class Main : MonoBehaviour
 					var mesg = string.Format("{0}가 {1}에 참여했습니다.", ss[1], ss[2]);
 					ShowToastMessage(mesg);
 				}
-				else if(ss[3] == "leave")
+				else if(ss[4] == "leave")
 				{
 					var spawn = spawns[ss[1]];
 					spawn.GetAvatar().Stand();
@@ -231,7 +231,7 @@ public class Main : MonoBehaviour
 				}
 				else if(ss[4] == "quit")
 				{
-					var mesg = string.Format("경기 종료. 백 : {0}, 흑 : {1}", ss[4], ss[5]);
+					var mesg = string.Format("경기 종료. 백 : {0}, 흑 : {1}", ss[5], ss[6]);
 					ShowToastMessage(mesg);
 				}
 				wi.ActionItem(ss[1], ss[2], ss[3]);
