@@ -53,6 +53,18 @@ public class Avatar : MonoBehaviour
 		go.name = "model";
 		animator = go.GetComponent<Animator>();
 		animator.runtimeAnimatorController = anims[model];
+		var trans = go.transform.Find("Bip001");
+		AddColliders(trans);
+	}
+	void AddColliders(Transform tr)
+	{
+		if(tr == null) return;
+		var cc = tr.gameObject.AddComponent<CapsuleCollider>();
+		for(int i = 0; i < tr.childCount; i++)
+		{
+			var t = tr.GetChild(i);
+			AddColliders(t);
+		}
 	}
 	public int GetAnimation() { return animator.GetInteger("animation"); }
 	public void Walk() { animator.SetInteger("animation", 1); }
