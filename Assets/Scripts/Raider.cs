@@ -27,7 +27,7 @@ public class Raider : MonoBehaviour
         pmat.color = Color.yellow;
         for(int y = 0; y < 32; y++)
         {
-            for(int x = 0; x < 256; x+=2)
+            for(int x = 0; x < 256; x+=1)
             {
                 particles[y, x] = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 particles[y, x].transform.parent = pd.transform;
@@ -43,12 +43,14 @@ public class Raider : MonoBehaviour
     {
         var eye = transform.position;
         var forward = transform.forward;
+        var ray = new Ray(eye, forward);
+        var yAngle = Mathf.Rad2Deg*Mathf.Atan2(forward.x, forward.z)+180.0f;
         for(int x = 0; x < 256; x++)
         {
             for(int y = 0; y < 32; y++)
             {
-                var rot = Quaternion.Euler(20.0f-y, x*360.0f/256.0f, 0.0f) * forward;
-                var ray = new Ray(eye, rot);
+                var rot = Quaternion.Euler(20.0f-y, x*360.0f/256.0f+yAngle, 0.0f)*Vector3.forward;
+                ray.direction = rot;
                 float distance = maxRange;
                 RaycastHit hit;
                 if(Physics.Raycast(ray, out hit, maxRange))
