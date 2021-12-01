@@ -139,7 +139,7 @@ public class Main : MonoBehaviour
 		if(!socketDesc.ProcessNetwork()) return;
 		//  3. 패킷 가져오기
 		var packet = Encoding.UTF8.GetString(socketDesc.GetPacket());
-		Debug.Log(packet);
+		//Debug.Log(packet);
 		var ss = packet.Split();
 		if(ss[0] == "join")
 		{

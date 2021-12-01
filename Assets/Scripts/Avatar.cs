@@ -51,20 +51,12 @@ public class Avatar : MonoBehaviour
 		//  모델에서 만들어져서 인스턴스화된 오브젝트의 부모를 현재 아바타로 한다.
 		go.transform.parent = transform;
 		go.name = "model";
+		go.tag = "Player";
 		animator = go.GetComponent<Animator>();
 		animator.runtimeAnimatorController = anims[model];
-		var trans = go.transform.Find("Bip001");
-		AddColliders(trans);
-	}
-	void AddColliders(Transform tr)
-	{
-		if(tr == null) return;
-		var cc = tr.gameObject.AddComponent<CapsuleCollider>();
-		for(int i = 0; i < tr.childCount; i++)
-		{
-			var t = tr.GetChild(i);
-			AddColliders(t);
-		}
+		var cc = go.AddComponent<CapsuleCollider>();
+		cc.height = 2.0f;
+		cc.radius = 0.5f;
 	}
 	public int GetAnimation() { return animator.GetInteger("animation"); }
 	public void Walk() { animator.SetInteger("animation", 1); }
