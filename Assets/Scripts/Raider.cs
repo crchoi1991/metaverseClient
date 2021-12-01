@@ -8,7 +8,6 @@ public class Raider : MonoBehaviour
     public float maxRange = 50.0f;
     public bool showHit = true;
     byte[] data;
-    int offset = 0;
     GameObject[,] particles;
 	void Awake()
 	{

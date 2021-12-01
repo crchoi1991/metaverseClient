@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Text;
 using System.Collections.Generic;
+using WebSocketSharp;
 
 public class Main : MonoBehaviour
 {
@@ -32,6 +33,24 @@ public class Main : MonoBehaviour
 
 	void Start()
 	{
+		//	Websocketsharp test
+		try
+		{
+			var wss = new WebSocketSharp.WebSocket("ws://127.0.0.1:8888/webrtc");
+			if(wss == null || !wss.IsAlive)
+			{
+				Debug.LogError("Websocket connection error.");
+			}
+			else
+			{
+				wss.Send(Encoding.UTF8.GetBytes("Hey"));
+			}
+		}
+		catch (System.Exception e)
+		{
+			Debug.LogErrorFormat("CATCH : Websocket connection error. : {0}", e.Message);
+		}
+
 		//  소켓 디스크립터를 생성합니다.
 		socketDesc = SocketDesc.Create();
 

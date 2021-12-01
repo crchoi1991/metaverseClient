@@ -13,11 +13,8 @@ public class VisionCam : MonoBehaviour
     {
         var cam = gameObject.GetComponent<Camera>();
         vision = cam.targetTexture;
-        var prev = RenderTexture.active;
-        RenderTexture.active = vision;
         tex = new Texture2D(vision.width, vision.height);
         rt = new Rect(0, 0, vision.width, vision.height);
-        RenderTexture.active = prev;
     }
 
     // Update is called once per frame
@@ -31,6 +28,7 @@ public class VisionCam : MonoBehaviour
 
         var pixs = tex.GetPixels32();
         var target = new Color32[vision.width*vision.height/4];
+        var white = new Color32(255, 255, 255, 255);
         var black = new Color32(0, 0, 0, 255);
         for(int y = 0; y < vision.height; y+=2)
         {
